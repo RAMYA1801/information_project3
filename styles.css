@@ -1,0 +1,113 @@
+/* BODY AND FONT */
+body {
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #0d1117;
+  color: #ffffff;
+  margin: 0;
+  padding: 20px;
+  text-align: center;
+}
+
+/* MAIN TITLE */
+.dashboard-title, .main-title {
+  color: #58a6ff;
+  font-size: 32px;
+  margin-bottom: 30px;
+  font-weight: bold;
+}
+
+/* ROW LAYOUTS */
+.top-row {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+  margin-bottom: 30px;
+}
+
+.bottom-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+}
+
+/* CHART CARD WRAPPER */
+.chart-card {
+  background-color: #161b22;
+  padding: 20px;
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  width: 500px;
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+}
+
+/* CHART HEADINGS */
+.chart-card h3 {
+  color: #fbbf24;
+  font-size: 18px;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+/* SVG CONTAINERS */
+.chart-card svg {
+  width: 100%;
+  height: 400px;
+  background-color: #1e1e1e;
+  border-radius: 8px;
+  border: 1px solid #333;
+}
+
+/* LEGEND TEXT (for Scatter Plot) */
+svg g text {
+  font-size: 12px;
+  fill: #ccc;
+}
+
+circle.legend-dot {
+  r: 6;
+}
+
+/* TEAM SECTION (used on homepage) */
+.team-section {
+  background-color: #161b22;
+  padding: 20px;
+  margin-top: 50px;
+  border-top: 1px solid #333;
+}
+
+.team-section h3 {
+  color: #58a6ff;
+  margin-bottom: 10px;
+}
+
+.team-section p {
+  color: #ccc;
+  margin: 5px 0;
+  font-size: 14px;
+}
+
+/* NAVIGATION BUTTON (on homepage) */
+.nav-container {
+  margin-top: 50px;
+  display: flex;
+  justify-content: center;
+}
+
+.nav-button {
+  background-color: #ec4899;
+  color: white;
+  padding: 14px 32px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.nav-button:hover {
+  background-color: #be185d;
+  transform: scale(1.05);
+}
