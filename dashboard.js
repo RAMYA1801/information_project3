@@ -11,25 +11,49 @@ d3.csv("cars.csv").then(data => {
     d.Cylinders = +d.Cylinders;
     d.Origin = d.Origin;
   });
+
   fullData = data;
   updateDashboard(fullData);
+
+  // Populate Dropdown
+  const years = Array.from(new Set(fullData.map(d => d["Model Year"]))).sort((a, b) => a - b);
+  const dropdown = document.getElementById("yearDropdown");
+  years.forEach(year => {
+    const option = document.createElement("option");
+    option.value = year;
+    option.textContent = year;
+    dropdown.appendChild(option);
+  });
+
+  // Dropdown Change Handler
+  dropdown.addEventListener("change", function () {
+    const selectedYear = this.value;
+    if (selectedYear === "all") {
+      updateDashboard(fullData);
+    } else {
+      const filtered = fullData.filter(d => d["Model Year"] === +selectedYear);
+      updateDashboard(filtered);
+      document.getElementById("resetButton").style.display = "block";
+    }
+  });
 });
 
 // Update All Charts
 function updateDashboard(data) {
-  drawPie("#pieChart", data, (filtered) => {
+  drawPie("#pieChart", data, filtered => {
     drawLine("#lineChart", filtered);
     drawScatter("#scatterChart", filtered);
     drawBarChart("#barChart", filtered);
     drawHeatmap("#heatmapChart", filtered);
   });
+
   drawLine("#lineChart", data);
   drawScatter("#scatterChart", data);
   drawBarChart("#barChart", data);
   drawHeatmap("#heatmapChart", data);
 }
 
-//pie chart//
+// Pie Chart
 function drawPie(selector, data, onSliceClick = null) {
   const svg = d3.select(selector);
   svg.selectAll("*").remove();
@@ -44,7 +68,6 @@ function drawPie(selector, data, onSliceClick = null) {
     .domain(["American", "European", "Japanese"])
     .range(["#1f77b4", "#ff7f0e", "#2ca02c"]);
 
-  // Create all slices
   const slices = g.selectAll("path")
     .data(pie(pieData))
     .enter()
@@ -55,23 +78,19 @@ function drawPie(selector, data, onSliceClick = null) {
     .attr("stroke-width", "2px")
     .style("cursor", "pointer");
 
-  // On slice click
-  slices.on("click", function(event, d) {
+  slices.on("click", function (event, d) {
     if (onSliceClick) {
       const filtered = fullData.filter(row => row.Origin === d.data[0]);
       onSliceClick(filtered);
     }
 
-    // Highlight clicked slice
     slices.transition().duration(300)
       .attr("opacity", s => (s.data[0] === d.data[0] ? 1 : 0.3))
       .attr("stroke-width", s => (s.data[0] === d.data[0] ? 4 : 2));
 
-    // Show Reset Button
     document.getElementById("resetButton").style.display = "block";
   });
 
-  // Add Labels inside Pie Slices
   g.selectAll("text")
     .data(pie(pieData))
     .enter()
@@ -83,10 +102,11 @@ function drawPie(selector, data, onSliceClick = null) {
     .style("font-size", "13px");
 }
 
-// LINE CHART
+// Line Chart
 function drawLine(selector, data) {
   const svg = d3.select(selector);
   svg.selectAll("*").remove();
+
   const grouped = d3.rollups(data, v => d3.mean(v, d => d.MPG), d => d["Model Year"]).sort((a, b) => a[0] - b[0]);
   const width = 500, height = 400, margin = { top: 30, right: 20, bottom: 50, left: 60 };
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -96,6 +116,7 @@ function drawLine(selector, data) {
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
     .call(d3.axisBottom(x)).selectAll("text").style("fill", "#ccc");
+
   g.append("g")
     .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
 
@@ -106,7 +127,6 @@ function drawLine(selector, data) {
     .attr("stroke-width", 2)
     .attr("d", d3.line().x(d => x(d[0])).y(d => y(d[1])));
 
-  // Add X-axis Label
   svg.append("text")
     .attr("x", width / 2)
     .attr("y", height - 5)
@@ -115,7 +135,6 @@ function drawLine(selector, data) {
     .style("font-size", "14px")
     .text("Model Year");
 
-  // Add Y-axis Label
   svg.append("text")
     .attr("transform", "rotate(-90)")
     .attr("x", -height / 2)
@@ -126,10 +145,11 @@ function drawLine(selector, data) {
     .text("Average MPG");
 }
 
-// SCATTER PLOT
+// Scatter Chart
 function drawScatter(selector, data) {
   const svg = d3.select(selector);
   svg.selectAll("*").remove();
+
   const width = 500, height = 400, margin = { top: 30, right: 20, bottom: 50, left: 60 };
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const x = d3.scaleLinear().domain(d3.extent(data, d => d.Horsepower)).nice().range([0, width - margin.left - margin.right]);
@@ -139,6 +159,7 @@ function drawScatter(selector, data) {
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
     .call(d3.axisBottom(x)).selectAll("text").style("fill", "#ccc");
+
   g.append("g")
     .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
 
@@ -152,17 +173,16 @@ function drawScatter(selector, data) {
     .attr("fill", d => color(d.Origin))
     .attr("opacity", 0.7);
 
-  // Add Legend
   const legend = svg.append("g")
     .attr("transform", `translate(${width - 120}, 30)`);
-  
+
   ["American", "European", "Japanese"].forEach((region, i) => {
     legend.append("circle")
       .attr("cx", 0)
       .attr("cy", i * 20)
       .attr("r", 6)
       .attr("fill", color(region));
-    
+
     legend.append("text")
       .attr("x", 12)
       .attr("y", i * 20 + 5)
@@ -172,7 +192,6 @@ function drawScatter(selector, data) {
       .attr("alignment-baseline", "middle");
   });
 
-  // Add X-axis Label
   svg.append("text")
     .attr("x", width / 2)
     .attr("y", height - 5)
@@ -181,7 +200,6 @@ function drawScatter(selector, data) {
     .style("font-size", "14px")
     .text("Horsepower");
 
-  // Add Y-axis Label
   svg.append("text")
     .attr("transform", "rotate(-90)")
     .attr("x", -height / 2)
@@ -192,10 +210,11 @@ function drawScatter(selector, data) {
     .text("Weight");
 }
 
-// BAR CHART
+// Bar Chart
 function drawBarChart(selector, data) {
   const svg = d3.select(selector);
   svg.selectAll("*").remove();
+
   const grouped = d3.rollups(data, v => v.length, d => d.Cylinders).sort((a, b) => a[0] - b[0]);
   const width = 500, height = 400, margin = { top: 40, right: 20, bottom: 50, left: 60 };
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
@@ -205,6 +224,7 @@ function drawBarChart(selector, data) {
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
     .call(d3.axisBottom(x)).selectAll("text").style("fill", "#ccc");
+
   g.append("g")
     .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
 
@@ -219,10 +239,11 @@ function drawBarChart(selector, data) {
     .attr("fill", "#3b82f6");
 }
 
-// HEATMAP
+// Heatmap
 function drawHeatmap(selector, data) {
   const svg = d3.select(selector);
   svg.selectAll("*").remove();
+
   const width = 500, height = 400, margin = { top: 30, right: 20, bottom: 50, left: 60 };
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
   const modelYears = Array.from(new Set(data.map(d => d["Model Year"]))).sort((a, b) => a - b);
@@ -231,12 +252,14 @@ function drawHeatmap(selector, data) {
   const y = d3.scaleBand().domain(origins).range([0, height - margin.top - margin.bottom]).padding(0.05);
   const meanData = d3.rollup(data, v => d3.mean(v, d => d.MPG), d => d["Model Year"], d => d.Origin);
   const heatmapData = [];
+
   modelYears.forEach(year => {
     origins.forEach(origin => {
       const mpg = meanData.get(year)?.get(origin) || 0;
       heatmapData.push({ year, origin, mpg });
     });
   });
+
   const color = d3.scaleSequential(d3.interpolateBlues).domain([0, d3.max(heatmapData, d => d.mpg)]);
 
   g.selectAll()
@@ -252,14 +275,14 @@ function drawHeatmap(selector, data) {
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
     .call(d3.axisBottom(x).tickFormat(d => `'${d.toString().slice(-2)}`)).selectAll("text").style("fill", "#ccc").attr("transform", "rotate(45)").style("text-anchor", "start");
+
   g.append("g")
     .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
 }
-// RESET BUTTON FUNCTIONALITY
-document.getElementById("resetButton").addEventListener("click", function() {
+// Reset Button Functionality
+document.getElementById("resetButton").addEventListener("click", function () {
   selectedRegion = null;
-  updateDashboard(fullData); // Redraw full dashboard without any filter
-
-  // Hide reset button again
-  document.getElementById("resetButton").style.display = "none";
+  document.getElementById("yearDropdown").value = "all"; // Reset the dropdown selection
+  updateDashboard(fullData); // Redraw all charts with full data
+  document.getElementById("resetButton").style.display = "none"; // Hide the button again
 });
