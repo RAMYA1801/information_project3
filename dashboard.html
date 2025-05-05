@@ -6,41 +6,100 @@
   <link rel="stylesheet" href="styles.css">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="dashboard.js" defer></script>
+  <style>
+    body {
+      background-color: #0d1117;
+      color: #ffffff;
+      font-family: sans-serif;
+      padding: 20px;
+    }
+
+    h1.main-title {
+      text-align: center;
+      font-size: 32px;
+      color: #81a8de;
+    }
+
+    h2.sub-title {
+      text-align: center;
+      font-size: 18px;
+      color: #f1fcfb;
+      margin-bottom: 30px;
+    }
+
+    .top-row, .bottom-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .chart-card {
+      background-color: #161b22;
+      padding: 15px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.05);
+    }
+
+    h3 {
+      color: #e2e8f0;
+      text-align: center;
+      margin-bottom: 10px;
+    }
+
+    select {
+      background-color: #1f2937;
+      color: #f1f5f9;
+      border: 1px solid #475569;
+      border-radius: 5px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #94a3b8;
+    }
+  </style>
 </head>
 <body>
   <h1 class="main-title">Driving Analytics: Unveiling Car Trends</h1>
   <h2 class="sub-title">An Interactive D3.js Dashboard Exploring Origins, Horsepower, and Fuel Efficiency</h2>
 
+  <!-- Reset Button -->
   <button id="resetButton" style="margin: 20px; padding: 10px 20px; background-color: #f97316; color: white; border: none; border-radius: 6px; font-size: 16px; cursor: pointer; display: none;">
-    Reset to All Regions
+    Reset to All Data
   </button>
-  
 
+  <!-- Top Row -->
   <div class="top-row">
     <div class="chart-card">
       <h3>Regional Breakdown of Car Origins</h3>
-      <svg id="pieChart"></svg>
+      <svg id="pieChart" width="400" height="400"></svg>
     </div>
     <div class="chart-card">
       <h3>Fuel Efficiency Progress Over Time</h3>
-      <svg id="lineChart"></svg>
+      <label for="yearDropdown">Filter by Model Year:</label>
+      <select id="yearDropdown">
+        <option value="all">All Years</option>
+      </select>
+      <svg id="lineChart" width="500" height="400"></svg>
     </div>
   </div>
 
+  <!-- Bottom Row -->
   <div class="bottom-row">
     <div class="chart-card">
       <h3>Power vs. Weight Analysis of Cars</h3>
-      <svg id="scatterChart"></svg>
+      <svg id="scatterChart" width="500" height="400"></svg>
     </div>
     <div class="chart-card">
       <h3>Cylinder Count Across Car Models</h3>
-      <svg id="barChart"></svg>
+      <svg id="barChart" width="500" height="400"></svg>
     </div>
     <div class="chart-card">
       <h3>Average MPG by Model Year and Region</h3>
-      <svg id="heatmapChart"></svg>
+      <svg id="heatmapChart" width="500" height="400"></svg>
     </div>
   </div>
-
 </body>
 </html>
