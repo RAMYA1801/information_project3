@@ -171,7 +171,7 @@ function drawLine(selector, data) {
     .attr("cy", d => y(d[1]))
     .attr("r", 5)
     .attr("fill", "#facc15")
-    .on("mouseover", (event, d) => {
+    .on("mouseover", (event, d) => {2
       tooltip.transition().duration(200).style("opacity", 0.9);
       tooltip.html(`Year: ${d[0]}<br>Avg MPG: ${d[1].toFixed(2)}`)
         .style("left", (event.pageX + 10) + "px")
@@ -226,12 +226,16 @@ function drawScatter(selector, data) {
 
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
-    .call(d3.axisBottom(x)).selectAll("text").style("fill", "#ccc");
+    .call(d3.axisBottom(x))
+    .selectAll("text")
+    .style("fill", "#ccc");
 
   g.append("g")
-    .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
+    .call(d3.axisLeft(y))
+    .selectAll("text")
+    .style("fill", "#ccc");
 
-  // Tooltip setup (global element if not already created)
+  // Tooltip setup
   let tooltip = d3.select(".tooltip");
   if (tooltip.empty()) {
     tooltip = d3.select("body")
@@ -259,13 +263,13 @@ function drawScatter(selector, data) {
     .on("mouseover", (event, d) => {
       tooltip.transition().duration(200).style("opacity", 0.9);
       tooltip.html(
-        `<strong>${d.Name}</strong><br>
+        `<strong>${d.Name || d.Origin}</strong><br>
          Horsepower: ${d.Horsepower}<br>
          MPG: ${d.MPG}<br>
          Weight: ${d.Weight}`
       )
-        .style("left", (event.pageX + 10) + "px")
-        .style("top", (event.pageY - 28) + "px");
+      .style("left", (event.pageX + 10) + "px")
+      .style("top", (event.pageY - 28) + "px");
     })
     .on("mousemove", event => {
       tooltip.style("left", (event.pageX + 10) + "px")
@@ -295,7 +299,7 @@ function drawScatter(selector, data) {
       .attr("alignment-baseline", "middle");
   });
 
-  // X and Y labels
+  // Axis Labels
   svg.append("text")
     .attr("x", width / 2)
     .attr("y", height - 5)
