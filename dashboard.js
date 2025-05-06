@@ -10,6 +10,8 @@ d3.csv("cars.csv").then(data => {
     d["Model Year"] = +d["Model Year"];
     d.Cylinders = +d.Cylinders;
     d.Origin = d.Origin;
+    d.Name = d.Name; 
+
   });
 
   fullData = data;
@@ -107,26 +109,83 @@ function drawLine(selector, data) {
   const svg = d3.select(selector);
   svg.selectAll("*").remove();
 
-  const grouped = d3.rollups(data, v => d3.mean(v, d => d.MPG), d => d["Model Year"]).sort((a, b) => a[0] - b[0]);
-  const width = 500, height = 400, margin = { top: 30, right: 20, bottom: 50, left: 60 };
+  const grouped = d3.rollups(data, v => d3.mean(v, d => d.MPG), d => d["Model Year"])
+                    .sort((a, b) => a[0] - b[0]);
+
+  const width = 500, height = 400;
+  const margin = { top: 30, right: 20, bottom: 50, left: 60 };
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const x = d3.scaleLinear().domain(d3.extent(grouped, d => d[0])).range([0, width - margin.left - margin.right]);
-  const y = d3.scaleLinear().domain([0, d3.max(grouped, d => d[1])]).range([height - margin.top - margin.bottom, 0]);
+
+  const x = d3.scaleLinear()
+    .domain(d3.extent(grouped, d => d[0]))
+    .range([0, width - margin.left - margin.right]);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(grouped, d => d[1])])
+    .range([height - margin.top - margin.bottom, 0]);
 
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
-    .call(d3.axisBottom(x)).selectAll("text").style("fill", "#ccc");
+    .call(d3.axisBottom(x).tickFormat(d3.format("d")))
+    .selectAll("text")
+    .style("fill", "#ccc");
 
   g.append("g")
-    .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
+    .call(d3.axisLeft(y))
+    .selectAll("text")
+    .style("fill", "#ccc");
 
+  // Line Path
   g.append("path")
     .datum(grouped)
     .attr("fill", "none")
     .attr("stroke", "#90caf9")
     .attr("stroke-width", 2)
-    .attr("d", d3.line().x(d => x(d[0])).y(d => y(d[1])));
+    .attr("d", d3.line()
+      .x(d => x(d[0]))
+      .y(d => y(d[1]))
+    );
 
+  // Tooltip setup
+  let tooltip = d3.select(".tooltip");
+  if (tooltip.empty()) {
+    tooltip = d3.select("body")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("position", "absolute")
+      .style("background", "#333")
+      .style("color", "#fff")
+      .style("padding", "8px 12px")
+      .style("border-radius", "6px")
+      .style("font-size", "13px")
+      .style("pointer-events", "none")
+      .style("opacity", 0);
+  }
+
+  // Add dots with tooltip
+  g.selectAll("circle")
+    .data(grouped)
+    .enter()
+    .append("circle")
+    .attr("cx", d => x(d[0]))
+    .attr("cy", d => y(d[1]))
+    .attr("r", 5)
+    .attr("fill", "#facc15")
+    .on("mouseover", (event, d) => {
+      tooltip.transition().duration(200).style("opacity", 0.9);
+      tooltip.html(`Year: ${d[0]}<br>Avg MPG: ${d[1].toFixed(2)}`)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mousemove", event => {
+      tooltip.style("left", (event.pageX + 10) + "px")
+             .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.transition().duration(300).style("opacity", 0);
+    });
+
+  // X and Y labels
   svg.append("text")
     .attr("x", width / 2)
     .attr("y", height - 5)
@@ -145,16 +204,27 @@ function drawLine(selector, data) {
     .text("Average MPG");
 }
 
+
 // Scatter Chart
 function drawScatter(selector, data) {
   const svg = d3.select(selector);
   svg.selectAll("*").remove();
 
-  const width = 500, height = 400, margin = { top: 30, right: 20, bottom: 50, left: 60 };
+  const width = 500, height = 400;
+  const margin = { top: 30, right: 20, bottom: 50, left: 60 };
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const x = d3.scaleLinear().domain(d3.extent(data, d => d.Horsepower)).nice().range([0, width - margin.left - margin.right]);
-  const y = d3.scaleLinear().domain(d3.extent(data, d => d.Weight)).nice().range([height - margin.top - margin.bottom, 0]);
-  const color = d3.scaleOrdinal().domain(["American", "European", "Japanese"]).range(["#1f77b4", "#ff7f0e", "#2ca02c"]);
+
+  const x = d3.scaleLinear()
+    .domain(d3.extent(data, d => d.Horsepower)).nice()
+    .range([0, width - margin.left - margin.right]);
+
+  const y = d3.scaleLinear()
+    .domain(d3.extent(data, d => d.Weight)).nice()
+    .range([height - margin.top - margin.bottom, 0]);
+
+  const color = d3.scaleOrdinal()
+    .domain(["American", "European", "Japanese"])
+    .range(["#1f77b4", "#ff7f0e", "#2ca02c"]);
 
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
@@ -162,6 +232,22 @@ function drawScatter(selector, data) {
 
   g.append("g")
     .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
+
+  // Tooltip setup (global element if not already created)
+  let tooltip = d3.select(".tooltip");
+  if (tooltip.empty()) {
+    tooltip = d3.select("body")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("position", "absolute")
+      .style("background", "#333")
+      .style("color", "#fff")
+      .style("padding", "8px 12px")
+      .style("border-radius", "6px")
+      .style("font-size", "13px")
+      .style("pointer-events", "none")
+      .style("opacity", 0);
+  }
 
   g.selectAll("circle")
     .data(data)
@@ -171,8 +257,27 @@ function drawScatter(selector, data) {
     .attr("cy", d => y(d.Weight))
     .attr("r", 4)
     .attr("fill", d => color(d.Origin))
-    .attr("opacity", 0.7);
+    .attr("opacity", 0.7)
+    .on("mouseover", (event, d) => {
+      tooltip.transition().duration(200).style("opacity", 0.9);
+      tooltip.html(
+        `<strong>${d.Name}</strong><br>
+         Horsepower: ${d.Horsepower}<br>
+         MPG: ${d.MPG}<br>
+         Weight: ${d.Weight}`
+      )
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mousemove", event => {
+      tooltip.style("left", (event.pageX + 10) + "px")
+             .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.transition().duration(300).style("opacity", 0);
+    });
 
+  // Legend
   const legend = svg.append("g")
     .attr("transform", `translate(${width - 120}, 30)`);
 
@@ -192,6 +297,7 @@ function drawScatter(selector, data) {
       .attr("alignment-baseline", "middle");
   });
 
+  // X and Y labels
   svg.append("text")
     .attr("x", width / 2)
     .attr("y", height - 5)
