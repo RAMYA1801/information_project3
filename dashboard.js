@@ -202,9 +202,7 @@ function drawLine(selector, data) {
     .style("fill", "#ccc")
     .style("font-size", "14px")
     .text("Average MPG");
-}
-
-
+} 
 // Scatter Chart
 function drawScatter(selector, data) {
   const svg = d3.select(selector);
@@ -322,17 +320,46 @@ function drawBarChart(selector, data) {
   svg.selectAll("*").remove();
 
   const grouped = d3.rollups(data, v => v.length, d => d.Cylinders).sort((a, b) => a[0] - b[0]);
-  const width = 500, height = 400, margin = { top: 40, right: 20, bottom: 50, left: 60 };
+  const width = 500, height = 400;
+  const margin = { top: 40, right: 20, bottom: 50, left: 60 };
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
-  const x = d3.scaleBand().domain(grouped.map(d => d[0])).range([0, width - margin.left - margin.right]).padding(0.2);
-  const y = d3.scaleLinear().domain([0, d3.max(grouped, d => d[1])]).nice().range([height - margin.top - margin.bottom, 0]);
+
+  const x = d3.scaleBand()
+    .domain(grouped.map(d => d[0]))
+    .range([0, width - margin.left - margin.right])
+    .padding(0.2);
+
+  const y = d3.scaleLinear()
+    .domain([0, d3.max(grouped, d => d[1])])
+    .nice()
+    .range([height - margin.top - margin.bottom, 0]);
 
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
-    .call(d3.axisBottom(x)).selectAll("text").style("fill", "#ccc");
+    .call(d3.axisBottom(x))
+    .selectAll("text")
+    .style("fill", "#ccc");
 
   g.append("g")
-    .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
+    .call(d3.axisLeft(y))
+    .selectAll("text")
+    .style("fill", "#ccc");
+
+  // Tooltip setup
+  let tooltip = d3.select(".tooltip");
+  if (tooltip.empty()) {
+    tooltip = d3.select("body")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("position", "absolute")
+      .style("background", "#333")
+      .style("color", "#fff")
+      .style("padding", "8px 12px")
+      .style("border-radius", "6px")
+      .style("font-size", "13px")
+      .style("pointer-events", "none")
+      .style("opacity", 0);
+  }
 
   g.selectAll("rect")
     .data(grouped)
@@ -342,23 +369,59 @@ function drawBarChart(selector, data) {
     .attr("y", d => y(d[1]))
     .attr("width", x.bandwidth())
     .attr("height", d => height - margin.top - margin.bottom - y(d[1]))
-    .attr("fill", "#3b82f6");
+    .attr("fill", "#3b82f6")
+    .on("mouseover", (event, d) => {
+      tooltip.transition().duration(200).style("opacity", 0.9);
+      tooltip.html(`Cylinders: ${d[0]}<br>Car Count: ${d[1]}`)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mousemove", event => {
+      tooltip.style("left", (event.pageX + 10) + "px")
+             .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.transition().duration(300).style("opacity", 0);
+    });
+
+  // X and Y Labels
+  svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", height - 5)
+    .attr("text-anchor", "middle")
+    .style("fill", "#ccc")
+    .style("font-size", "14px")
+    .text("Cylinders");
+
+  svg.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 2)
+    .attr("y", 15)
+    .attr("text-anchor", "middle")
+    .style("fill", "#ccc")
+    .style("font-size", "14px")
+    .text("Car Count");
 }
+
 
 // Heatmap
 function drawHeatmap(selector, data) {
   const svg = d3.select(selector);
   svg.selectAll("*").remove();
 
-  const width = 500, height = 400, margin = { top: 30, right: 20, bottom: 50, left: 60 };
+  const width = 500, height = 400;
+  const margin = { top: 40, right: 20, bottom: 60, left: 80 };
   const g = svg.append("g").attr("transform", `translate(${margin.left},${margin.top})`);
+
   const modelYears = Array.from(new Set(data.map(d => d["Model Year"]))).sort((a, b) => a - b);
   const origins = ["American", "European", "Japanese"];
+
   const x = d3.scaleBand().domain(modelYears).range([0, width - margin.left - margin.right]).padding(0.05);
   const y = d3.scaleBand().domain(origins).range([0, height - margin.top - margin.bottom]).padding(0.05);
-  const meanData = d3.rollup(data, v => d3.mean(v, d => d.MPG), d => d["Model Year"], d => d.Origin);
-  const heatmapData = [];
 
+  const meanData = d3.rollup(data, v => d3.mean(v, d => d.MPG), d => d["Model Year"], d => d.Origin);
+
+  const heatmapData = [];
   modelYears.forEach(year => {
     origins.forEach(origin => {
       const mpg = meanData.get(year)?.get(origin) || 0;
@@ -366,9 +429,26 @@ function drawHeatmap(selector, data) {
     });
   });
 
-  const color = d3.scaleSequential(d3.interpolateBlues).domain([0, d3.max(heatmapData, d => d.mpg)]);
+  const color = d3.scaleSequential(d3.interpolateBlues)
+    .domain([0, d3.max(heatmapData, d => d.mpg)]);
 
-  g.selectAll()
+  // Tooltip
+  let tooltip = d3.select(".tooltip");
+  if (tooltip.empty()) {
+    tooltip = d3.select("body")
+      .append("div")
+      .attr("class", "tooltip")
+      .style("position", "absolute")
+      .style("background", "#333")
+      .style("color", "#fff")
+      .style("padding", "8px 12px")
+      .style("border-radius", "6px")
+      .style("font-size", "13px")
+      .style("pointer-events", "none")
+      .style("opacity", 0);
+  }
+
+  g.selectAll("rect")
     .data(heatmapData)
     .enter()
     .append("rect")
@@ -376,15 +456,91 @@ function drawHeatmap(selector, data) {
     .attr("y", d => y(d.origin))
     .attr("width", x.bandwidth())
     .attr("height", y.bandwidth())
-    .style("fill", d => color(d.mpg));
+    .style("fill", d => color(d.mpg))
+    .style("stroke", "#222")
+    .on("mouseover", (event, d) => {
+      tooltip.transition().duration(200).style("opacity", 0.9);
+      tooltip.html(`Region: ${d.origin}<br>Year: ${d.year}<br>Avg MPG: ${d.mpg.toFixed(2)}`)
+        .style("left", (event.pageX + 10) + "px")
+        .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mousemove", event => {
+      tooltip.style("left", (event.pageX + 10) + "px")
+             .style("top", (event.pageY - 28) + "px");
+    })
+    .on("mouseout", () => {
+      tooltip.transition().duration(300).style("opacity", 0);
+    });
 
+  // X Axis
   g.append("g")
     .attr("transform", `translate(0,${height - margin.top - margin.bottom})`)
-    .call(d3.axisBottom(x).tickFormat(d => `'${d.toString().slice(-2)}`)).selectAll("text").style("fill", "#ccc").attr("transform", "rotate(45)").style("text-anchor", "start");
+    .call(d3.axisBottom(x).tickFormat(d => `'${d.toString().slice(-2)}`))
+    .selectAll("text")
+    .style("fill", "#ccc")
+    .attr("transform", "rotate(45)")
+    .style("text-anchor", "start");
 
+  // Y Axis
   g.append("g")
-    .call(d3.axisLeft(y)).selectAll("text").style("fill", "#ccc");
+    .call(d3.axisLeft(y))
+    .selectAll("text")
+    .style("fill", "#ccc");
+
+  // Axis Labels
+  svg.append("text")
+    .attr("x", width / 2)
+    .attr("y", height - 10)
+    .attr("text-anchor", "middle")
+    .style("fill", "#ccc")
+    .style("font-size", "14px")
+    .text("Model Year");
+
+  svg.append("text")
+    .attr("transform", "rotate(-90)")
+    .attr("x", -height / 2)
+    .attr("y", 20)
+    .attr("text-anchor", "middle")
+    .style("fill", "#ccc")
+    .style("font-size", "14px")
+    .text("Region");
+
+  // Color Legend
+  const defs = svg.append("defs");
+  const linearGradient = defs.append("linearGradient")
+    .attr("id", "legendGradient");
+
+  linearGradient.selectAll("stop")
+    .data(d3.range(0, 1.01, 0.1))
+    .enter()
+    .append("stop")
+    .attr("offset", d => `${d * 100}%`)
+    .attr("stop-color", d => color(d * d3.max(heatmapData, d => d.mpg)));
+
+  const legendWidth = 150, legendHeight = 10;
+  svg.append("rect")
+    .attr("x", width - legendWidth - 30)
+    .attr("y", 10)
+    .attr("width", legendWidth)
+    .attr("height", legendHeight)
+    .style("fill", "url(#legendGradient)");
+
+  const legendScale = d3.scaleLinear()
+    .domain(color.domain())
+    .range([0, legendWidth]);
+
+  const legendAxis = d3.axisBottom(legendScale)
+    .ticks(5)
+    .tickFormat(d3.format(".1f"));
+
+  svg.append("g")
+    .attr("transform", `translate(${width - legendWidth - 30}, 20)`)
+    .call(legendAxis)
+    .selectAll("text")
+    .style("fill", "#ccc")
+    .style("font-size", "10px");
 }
+
 // Reset Button Functionality
 document.getElementById("resetButton").addEventListener("click", function () {
   selectedRegion = null;
